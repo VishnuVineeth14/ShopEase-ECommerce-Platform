@@ -3,10 +3,12 @@ package com.shopease.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
@@ -20,8 +22,21 @@ public class JwtService {
     @Value("${app.jwt.secret}")
     private String secretKey;
 
+    private SecretKey signingKey;
+
     @Value("${app.jwt.expiration}")
     private long jwtExpiration;
+
+    @PostConstruct
+    void initializeSigningKey() {
+        if (secretKey == null || secretKey.isBlank()) {
+            // Local clones can run without a committed secret. Tokens are invalidated on restart.
+            signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+            return;
+        }
+
+        signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -76,7 +91,6 @@ public class JwtService {
     }
 
     private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return signingKey;
     }
 }

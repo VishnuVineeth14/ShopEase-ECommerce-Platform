@@ -33,14 +33,11 @@ pnpm-debug.log*
 
 # Local Spring configuration may contain database credentials and JWT secrets
 application-*.properties
-!backend/src/main/resources/application.properties
-application.yml
 application-*.yml
-application.yaml
 application-*.yaml
-!application.example.properties
-!application.example.yml
-!application.example.yaml
+
+# Shared application.properties/application.yml files remain trackable.
+# Put machine-specific overrides in application-local.* or application-*.properties.
 
 # Credentials, tokens, and private keys
 *.secret
@@ -53,10 +50,6 @@ application-*.yaml
 credentials.json
 secrets.json
 service-account*.json
-
-# Spring Boot local configuration
-application-local.properties
-application-local.yml
 
 # =========================
 # IDE - IntelliJ IDEA

@@ -17,6 +17,9 @@ A complete full-stack e-commerce web application with role-based access control 
 
 ## Demo Accounts
 
+These accounts are for local development only. Change or remove them before deploying
+the application to a shared or production environment.
+
 The application automatically seeds the database with the following demo accounts on first startup:
 
 - **Admin Account:** 
@@ -38,7 +41,20 @@ The application automatically seeds the database with the following demo account
    The application will automatically connect to `mongodb://localhost:27017/shopease_db` and create the `shopease_db` database.
 
 2. **MongoDB Atlas (Optional):**
-   If you prefer using a cloud database, edit `backend/src/main/resources/application.properties` and change the `spring.data.mongodb.uri` property to your Atlas connection string.
+   If you prefer using a cloud database, set the MongoDB URI through your environment or a local ignored Spring profile. Never commit an Atlas connection string containing credentials.
+
+### JWT Secret
+
+For local development, the application generates a temporary JWT signing key when
+`JWT_SECRET` is not set. Tokens will need to be refreshed after a backend restart.
+
+For a persistent or production deployment, set a strong Base64-encoded secret:
+
+```bash
+export JWT_SECRET="your-base64-encoded-secret"
+```
+
+Do not commit `.env` files or secret values. Use `.env.example` as a template.
 
 ## Backend Setup
 
