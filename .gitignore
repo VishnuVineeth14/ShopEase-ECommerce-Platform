@@ -1,0 +1,96 @@
+# =========================
+# Java / Spring Boot
+# =========================
+
+backend/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# =========================
+# Node / Vue
+# =========================
+
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# Environment / Secrets
+# =========================
+
+.env
+.env.*
+!.env.example
+
+# Local Spring configuration may contain database credentials and JWT secrets
+application-*.properties
+application-*.yml
+application-*.yaml
+
+# Shared application.properties/application.yml files remain trackable.
+# Put machine-specific overrides in application-local.* or application-*.properties.
+
+# Credentials, tokens, and private keys
+*.secret
+*.secrets
+*.credentials
+*.pem
+*.key
+*.p12
+*.jks
+credentials.json
+secrets.json
+service-account*.json
+
+# =========================
+# IDE - IntelliJ IDEA
+# =========================
+
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# =========================
+# VS Code
+# =========================
+
+.vscode/
+
+# =========================
+# macOS
+# =========================
+
+.DS_Store
+
+# =========================
+# Logs
+# =========================
+
+*.log
+
+# =========================
+# Temporary files
+# =========================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.orig
+
+# =========================
+# OS / IDE metadata
+# =========================
+
+Thumbs.db
