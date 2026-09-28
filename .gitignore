@@ -32,7 +32,6 @@ pnpm-debug.log*
 !.env.example
 
 # Local Spring configuration may contain database credentials and JWT secrets
-application.properties
 application-*.properties
 application.yml
 application-*.yml
