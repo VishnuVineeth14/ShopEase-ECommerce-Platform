@@ -31,6 +31,29 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
+# Local Spring configuration may contain database credentials and JWT secrets
+application.properties
+application-*.properties
+application.yml
+application-*.yml
+application.yaml
+application-*.yaml
+!application.example.properties
+!application.example.yml
+!application.example.yaml
+
+# Credentials, tokens, and private keys
+*.secret
+*.secrets
+*.credentials
+*.pem
+*.key
+*.p12
+*.jks
+credentials.json
+secrets.json
+service-account*.json
+
 # Spring Boot local configuration
 application-local.properties
 application-local.yml
@@ -70,6 +93,8 @@ application-local.yml
 *.temp
 *.swp
 *.swo
+*.bak
+*.orig
 
 # =========================
 # OS / IDE metadata
