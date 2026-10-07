@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+gateway:
+  services:
+    user: ${USER_SERVICE_URL:http://localhost:8081}
+    product: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+    cart: ${CART_SERVICE_URL:http://localhost:8083}
+    order: ${ORDER_SERVICE_URL:http://localhost:8084}

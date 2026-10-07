@@ -1,362 +1,307 @@
-# ShopEase: Full-Stack E-Commerce and Shopping Cart System
+# ShopEase: Full-Stack E-Commerce System
 
 ## Abstract
 
 ShopEase is a full-stack e-commerce application designed to support online product
 discovery, shopping-cart management, order processing, wishlist operations, product
-reviews, and role-based administration. The system is implemented using a Vue.js
-frontend, a Spring Boot REST backend, MongoDB persistence, and JWT-based
-authentication. The application provides separate workflows for customers, sellers,
-and administrators.
+reviews, and role-based administration. The system is implemented using a Vue.js 3
+frontend, MongoDB persistence, and Spring Boot REST services secured with JWT-based
+authentication. The system supports two interchangeable backend architectural modes:
+a layered monolithic Spring Boot REST backend and a distributed **4-Microservices Architecture**
+coordinated by an API Gateway.
 
-**Keywords—** E-commerce, Spring Boot, Vue.js, MongoDB, REST API, JWT, role-based
-access control, shopping cart.
+**Keywords—** E-commerce, Microservices, Spring Boot, Vue.js, MongoDB, API Gateway, REST API, JWT, role-based access control.
+
+---
 
 ## 1. Introduction
 
-The objective of ShopEase is to provide a modular and secure foundation for an online
-shopping platform. The application separates presentation, business logic, data
-access, and persistence concerns. This architecture supports independent development
-of the backend and frontend while maintaining a clear REST-based communication layer.
+The objective of ShopEase is to provide a modular, secure, and production-ready foundation for an online shopping platform. The application separates presentation, business logic, data access, and persistence concerns:
 
-The project is suitable for academic demonstration, software engineering practice,
-and future extension into a production-ready commerce platform.
+1. **Frontend**: A Vue.js 3 single-page application built with Vite and Pinia providing customer, seller, and administrator interfaces.
+2. **Backend Option A (Monolith)**: A unified Spring Boot REST application combining all domain services into a single deployable artifact.
+3. **Backend Option B (Microservices)**: A decomposed distributed architecture comprising **4 dedicated domain microservices** (`user-service`, `product-service`, `cart-service`, `order-service`) fronted by an `api-gateway` on port 8080.
+
+The project is suitable for academic evaluation, software engineering course projects, enterprise microservices study, and production extension.
+
+---
 
 ## 2. Technology Stack
 
 | Layer | Technologies |
 |---|---|
-| Frontend | Vue.js 3, Vite, Vue Router, Pinia, Axios, Bootstrap 5, Sass |
-| Backend | Java 17, Spring Boot 3.2.5, Spring Web, Spring Security, Spring Data MongoDB |
-| Authentication | JSON Web Tokens (JWT), BCrypt password hashing |
-| Database | MongoDB 6.0 or later |
-| API documentation | OpenAPI/Swagger |
-| Build tools | Maven 3.8 or later, npm 9 or later |
-| Development tools | Spring Tool Suite/IntelliJ IDEA for backend, Visual Studio Code for frontend |
+| **Frontend** | Vue.js 3, Vite, Vue Router, Pinia, Axios, Bootstrap 5, Sass |
+| **Backend Framework** | Java 17/21/24, Spring Boot 3.2.5, Spring Web, Spring Security, Spring Data MongoDB |
+| **Microservices Stack** | Spring Boot Multi-Module Maven, Spring RestClient inter-service communication, Spring Boot API Gateway |
+| **Authentication & Security** | JSON Web Tokens (JJWT 0.12.5, HMAC-SHA256), BCrypt password hashing, Zero-Committed Secrets policy |
+| **Database** | MongoDB 6.0 or later (separate database namespaces per microservice) |
+| **API Documentation** | OpenAPI 3.0 / Swagger UI |
+| **Build & Package Tools** | Apache Maven 3.8+, Node.js 18+, npm 9+ |
+| **Development Environments** | IntelliJ IDEA (backend & microservices), Visual Studio Code (frontend) |
+
+---
 
 ## 3. System Architecture
 
-ShopEase follows a layered client-server architecture:
+ShopEase can be run in either of two backend configurations, both 100% compatible with the Vue.js frontend without changing any client-side code:
 
-1. The Vue.js client provides role-specific user interfaces and communicates with the
-   backend through Axios-based HTTP requests.
-2. Spring Boot exposes REST endpoints through controller classes.
-3. Service classes implement validation, authorization-aware business logic, and
-   transaction workflows.
-4. Repository interfaces provide MongoDB data access.
-5. Spring Security and the JWT filter authenticate requests and enforce role-based
-   authorization.
+### 3.1 Distributed Microservices Architecture (Recommended)
+
+```mermaid
+graph TD
+    Client["Vue.js 3 Client (Port 5173)"]
+    Gateway["API Gateway (Port 8080)"]
+
+    subgraph Microservices Layer
+        US["1. User & Auth Service (Port 8081)"]
+        PS["2. Product & Catalog Service (Port 8082)"]
+        CS["3. Cart & Wishlist Service (Port 8083)"]
+        OS["4. Order & Payment Service (Port 8084)"]
+    end
+
+    subgraph MongoDB Persistence
+        DB_U[("shopease_user_db")]
+        DB_P[("shopease_product_db")]
+        DB_C[("shopease_cart_db")]
+        DB_O[("shopease_order_db")]
+    end
+
+    Client -->|HTTP /api/* + JWT| Gateway
+    Gateway -->|/api/auth/*, /api/admin/users/*| US
+    Gateway -->|/api/products/*, /api/categories/*, /api/seller/products/*, /api/reviews/*| PS
+    Gateway -->|/api/cart/*, /api/wishlist/*| CS
+    Gateway -->|/api/orders/*, /api/seller/orders/*, /api/admin/orders/*, /api/*/dashboard| OS
+
+    US --- DB_U
+    PS --- DB_P
+    CS --- DB_C
+    OS --- DB_O
+
+    CS -.->|Stock check| PS
+    OS -.->|Clear cart| CS
+    OS -.->|Deduct / Restore inventory| PS
+```
+
+#### Microservices Domain Breakdown
+
+| Service | Port | Database | Primary Scope |
+|---|---|---|---|
+| **User Service** | `8081` | `shopease_user_db` | Authentication, registration, JWT issuance, profile, admin user management. |
+| **Product Service** | `8082` | `shopease_product_db` | Categories, catalog, search/filters, seller product CRUD, reviews, atomic stock operations. |
+| **Cart Service** | `8083` | `shopease_cart_db` | Persistent cart items, wishlist, live stock validation via Product Service, move-to-cart. |
+| **Order Service** | `8084` | `shopease_order_db` | Distributed checkout, mock payments, seller fulfillment, cancellation inventory restock, analytics. |
+| **API Gateway** | `8080` | *Stateless* | Reverse proxy, CORS enforcement, JWT header propagation, unified frontend endpoint. |
+
+### 3.2 Monolithic Layered Architecture
 
 ```text
-Vue.js 3 Client
+Vue.js 3 Client (Port 5173)
       |
       | HTTP/JSON + JWT Bearer Token
       v
-Spring Boot REST API
+Spring Boot Monolith REST API (Port 8080)
       |
-      +-- Controllers
+      +-- Controllers (Auth, Product, Category, Cart, Order, Review, Admin, Seller)
       +-- Services
       +-- Repositories
       +-- Spring Security / JWT
       v
-MongoDB Database
+MongoDB Database (shopease_db)
 ```
+
+---
 
 ## 4. Functional Features
 
 ### 4.1 Authentication and Authorization
-
-- Customer registration and login.
-- JWT-based stateless authentication.
-- BCrypt password hashing.
-- Role-based access control for `ADMIN`, `SELLER`, and `CUSTOMER` users.
-- Protected routes for carts, wishlists, orders, seller operations, and administration.
-- Validation and structured handling of unauthorized and forbidden requests.
+- Customer and Seller registration with validation.
+- JWT-based stateless authentication with BCrypt password encryption.
+- Role-based authorization for `ADMIN`, `SELLER`, and `CUSTOMER` roles.
+- Protected routes across carts, wishlists, orders, seller management, and administrative dashboards.
+- Automatic session termination upon token expiration via Axios response interceptors.
 
 ### 4.2 Customer Features
-
-- Browse products and categories.
-- Search products by keyword.
-- Filter products by category and price range.
-- Sort product results.
-- View product details and reviews.
-- Add, update, remove, and clear cart items.
-- Add and remove wishlist products.
-- Move wishlist items to the cart.
-- Checkout using mock card payment or cash on delivery.
-- View order history and order details.
-- Cancel eligible orders.
-- Submit product reviews.
-- View a customer dashboard.
+- Browse catalog with category filtering, keyword search, price range filtering, and multi-field sorting.
+- View detailed product specifications and community customer reviews.
+- Manage shopping cart items (add, adjust quantity, remove, and clear).
+- Manage personal wishlist and transfer wishlist items to cart in a single click.
+- Seamless checkout supporting Mock Card Payment and Cash on Delivery.
+- Order history with live order status tracking and customer order cancellation.
+- Submit product reviews and star ratings.
 
 ### 4.3 Seller Features
-
-- View seller dashboard statistics.
-- View seller-owned products.
-- Create products.
-- Update product information, pricing, and inventory.
-- Delete seller-owned products.
-- View seller orders.
-- Update order status.
+- Dedicated seller analytics dashboard (total sales revenue, active orders, low-stock alerts).
+- Create, modify, and delete seller-owned products with image URLs and inventory counts.
+- View seller-specific order items and update shipping/delivery statuses.
 
 ### 4.4 Administrator Features
+- Platform-wide dashboard aggregating metrics across users, categories, products, and gross revenue.
+- User management: search users, filter by role, activate/deactivate accounts, and delete users.
+- Category catalog management (create, update, delete).
+- Platform-wide order oversight and inspection.
 
-- View platform dashboard statistics.
-- View and search users.
-- Filter users by role.
-- Enable or disable user accounts.
-- Delete users.
-- Create, update, and delete categories.
-- Delete products.
-- View all orders.
-
-### 4.5 Data and API Features
-
-- MongoDB document persistence for users, products, categories, carts, orders,
-  wishlists, and reviews.
-- DTO-based request and response handling.
-- Bean Validation for incoming requests.
-- Centralized exception handling.
-- Consistent API response formatting.
-- OpenAPI/Swagger documentation.
-- Development data seeding for demonstration accounts, categories, and products.
+---
 
 ## 5. Project Structure
 
 ```text
-ShopEase/
-├── backend/
-│   ├── pom.xml
-│   └── src/main/
-│       ├── java/com/shopease/
-│       │   ├── ShopEaseApplication.java
-│       │   ├── config/          # CORS, security, Swagger, and data seeding
-│       │   ├── controller/      # REST API endpoints
-│       │   ├── dto/             # Request and response objects
-│       │   ├── exception/       # Custom exceptions and global handler
-│       │   ├── model/           # MongoDB domain models and enums
-│       │   ├── repository/      # Spring Data MongoDB repositories
-│       │   ├── security/        # JWT filter, service, and user details
-│       │   └── service/         # Application and business logic
-│       └── resources/
-│           └── application.properties
-├── frontend/
+full_stack_shopping_cart/
+├── frontend/                     # Vue.js 3 Client Application (Vite + Pinia)
 │   ├── package.json
 │   ├── vite.config.js
 │   ├── index.html
 │   └── src/
-│       ├── assets/              # Sass and frontend assets
-│       ├── components/          # Reusable Vue components
-│       ├── router/              # Vue Router configuration
-│       ├── services/            # Axios API service
-│       ├── stores/              # Pinia authentication and cart state
-│       └── views/               # Admin, seller, customer, and auth screens
-├── .env.example                # Safe environment-variable template
-├── .gitignore                  # Local files and secrets excluded from Git
-├── explain.md                  # Additional implementation notes
-└── README.md
+│       ├── components/          # Reusable components (Navbar, Modals)
+│       ├── router/              # Vue Router navigation & route guards
+│       ├── services/            # Axios API client (configured for http://localhost:8080/api)
+│       ├── stores/              # Pinia state stores (auth, cart)
+│       └── views/               # Customer, Seller, Admin, and Auth screens
+│
+├── microservices/                # Distributed Microservices Architecture (Spring Boot 3)
+│   ├── pom.xml                  # Parent Maven Multi-Module descriptor
+│   ├── README.md                # Comprehensive microservices architectural manual
+│   ├── .run/                    # Pre-configured IntelliJ IDEA Run Configurations
+│   │   ├── ApiGatewayApplication.run.xml
+│   │   ├── CartServiceApplication.run.xml
+│   │   ├── OrderServiceApplication.run.xml
+│   │   ├── ProductServiceApplication.run.xml
+│   │   └── UserServiceApplication.run.xml
+│   ├── api-gateway/             # Port 8080 - Unified reverse proxy router
+│   ├── user-service/            # Port 8081 - Auth & User accounts (shopease_user_db)
+│   ├── product-service/         # Port 8082 - Catalog, Categories, Reviews (shopease_product_db)
+│   ├── cart-service/            # Port 8083 - Cart & Wishlist (shopease_cart_db)
+│   └── order-service/           # Port 8084 - Checkout, Orders, Analytics (shopease_order_db)
+│
+├── backend/                      # Original Monolithic Spring Boot REST API (Port 8080)
+│   ├── pom.xml
+│   └── src/
+│
+├── .env.example                 # Safe environment variable template
+├── .gitignore                   # Security-hardened gitignore (secrets, targets, IDEs)
+├── explain.md                   # Beginner architecture and dataflow explanations
+└── README.md                    # Primary system documentation
 ```
 
-Generated directories such as `backend/target`, `frontend/node_modules`, and
-`frontend/dist` are intentionally excluded from version control.
+---
 
 ## 6. Prerequisites
 
-Install the following software before starting the application:
+- **Java Development Kit (JDK)**: Version 17 or higher (JDK 21 and 24 fully supported).
+- **Maven**: Version 3.8 or higher.
+- **Node.js**: Version 18 or higher and **npm** 9 or higher.
+- **MongoDB**: Version 6.0 or higher, running locally on `localhost:27017` or via MongoDB Atlas.
+- **IDE**: IntelliJ IDEA (for backend & microservices), Visual Studio Code (for frontend).
 
-- Java Development Kit (JDK) 17 or later.
-- Maven 3.8 or later.
-- Node.js 18 or later and npm 9 or later.
-- MongoDB 6.0 or later, running locally or available through MongoDB Atlas.
-- Spring Tool Suite or IntelliJ IDEA for running the backend.
-- Visual Studio Code for running and modifying the frontend.
-
-Verify the installations:
-
-```bash
-java -version
-mvn -version
-node --version
-npm --version
-```
+---
 
 ## 7. Database Configuration
 
-### 7.1 Local MongoDB
-
-Start MongoDB on the default local port, `27017`. ShopEase uses the database named
-`shopease_db` by default. MongoDB creates the database and collections when data is
-first written.
-
-### 7.2 MongoDB Atlas or Another MongoDB Server
-
-Do not commit a connection string containing a username or password. Override the
-default configuration through the Spring Boot run configuration or an ignored local
-profile. For example:
-
-```text
-SPRING_DATA_MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<database>
-```
-
-The angle-bracket values are placeholders and must not be committed as real
-credentials.
-
-## 8. Running the Backend in Spring Boot
-
-### 8.1 Import the Backend
-
-1. Open Spring Tool Suite or IntelliJ IDEA.
-2. Select **Open** or **Import Existing Maven Project**.
-3. Choose the `backend` directory.
-4. Allow Maven to download and index the project dependencies.
-5. Confirm that the project uses JDK 17 or a compatible newer JDK.
-
-### 8.2 Configure the JWT Secret
-
-For local development, the application generates a temporary signing key if
-`JWT_SECRET` is not configured. Existing tokens become invalid when the backend is
-restarted.
-
-For a persistent environment, add the following environment variable to the Spring
-Boot run configuration:
-
-```text
-JWT_SECRET=<strong-base64-encoded-secret>
-```
-
-Never place the real value in `application.properties`, source code, screenshots, or
-Git history.
-
-### 8.3 Start the Backend
-
-1. Open `backend/src/main/java/com/shopease/ShopEaseApplication.java`.
-2. Run the `ShopEaseApplication` Spring Boot application.
-3. Confirm that the backend is available at:
-
-```text
-http://localhost:8080
-```
-
-The backend can also be started from a terminal:
-
+Start MongoDB on the default local port, `27017`:
 ```bash
-cd backend
-mvn spring-boot:run
+brew services start mongodb-community
+# or
+mongod --dbpath /path/to/data
 ```
 
-Swagger documentation is available at:
+- In **Monolith mode**, data is stored in database `shopease_db`.
+- In **Microservices mode**, data is cleanly segregated into:
+  - `shopease_user_db` (users)
+  - `shopease_product_db` (categories, products, reviews)
+  - `shopease_cart_db` (carts, wishlists)
+  - `shopease_order_db` (orders)
 
-```text
-http://localhost:8080/swagger-ui.html
-```
+MongoDB automatically creates each database and its collections upon first write.
 
-## 9. Running the Frontend in Visual Studio Code
+---
 
-1. Open the project folder in Visual Studio Code.
-2. Open a terminal in VS Code.
-3. Navigate to the frontend directory:
+## 8. Running the Backend
 
-```bash
-cd frontend
-```
+You can choose to run either the **Microservices Architecture** (Option A) or the **Monolith** (Option B):
 
-4. Install the frontend dependencies:
+### Option A: Running the Microservices in IntelliJ IDEA (Recommended)
 
-```bash
-npm install
-```
+1. **Open the Project:**
+   - In IntelliJ IDEA, select **File -> Open...**
+   - Select the `microservices` folder:
+     `/Users/jhansisiva/Documents/Win college /sem5/web devolopment/full_stack_shopping_cart/microservices`
+   - IntelliJ automatically imports `pom.xml` and detects all 5 Spring Boot submodules.
+2. **Launch Services:**
+   - In IntelliJ, open the **Services** tool window (**View -> Tool Windows -> Services** or `Cmd+8` / `Alt+8`).
+   - Run the services in order (or click "Run All"):
+     1. `UserServiceApplication` (Port 8081)
+     2. `ProductServiceApplication` (Port 8082)
+     3. `CartServiceApplication` (Port 8083)
+     4. `OrderServiceApplication` (Port 8084)
+     5. `ApiGatewayApplication` (Port 8080)
+3. **Verify Gateway Health:**
+   - The API Gateway is active at `http://localhost:8080/api`.
 
-5. Start the Vite development server:
+### Option B: Running the Monolith Backend
 
-```bash
-npm run dev
-```
+1. In IntelliJ IDEA or terminal, open the `backend` directory.
+2. Run the `com.shopease.ShopEaseApplication` class, or in terminal:
+   ```bash
+   cd backend
+   mvn spring-boot:run
+   ```
+3. Available at `http://localhost:8080`.
 
-6. Open the URL printed by Vite, normally:
+---
 
-```text
-http://localhost:5173
-```
+## 9. Running the Frontend
 
-The frontend expects the backend to be running at `http://localhost:8080`.
+1. Open a terminal and navigate to `frontend`:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+2. Open your browser at `http://localhost:5173`.
+3. The frontend points directly to `http://localhost:8080/api` and works identically whether backed by the Monolith or the Microservices API Gateway!
+
+---
 
 ## 10. Demonstration Accounts
 
-The development data seeder creates the following accounts on first startup:
+Default demonstration accounts are seeded automatically on first startup:
 
-| Role | Email | Password |
-|---|---|---|
-| Administrator | `admin@example.com` | `Admin@123` |
-| Seller | `seller@example.com` | `Seller@123` |
-| Customer | `customer@example.com` | `Customer@123` |
+| Role | Email | Password | Access Rights |
+|---|---|---|---|
+| **Administrator** | `admin@example.com` | `Admin@123` | Full dashboard analytics, user status toggle/deletion, category controls, order oversight. |
+| **Seller** | `seller@example.com` | `Seller@123` | Seller sales dashboard, inventory management, product CRUD, order status updates. |
+| **Customer** | `customer@example.com` | `Customer@123` | Product catalog, cart, wishlist, checkout, review submissions, order history. |
 
-These credentials are for local demonstration only. They must be changed or removed
-before any public or production deployment.
+---
 
-## 11. Important API Resource Groups
+## 11. Security and Zero-Secret Git Policy
 
-| Resource | Base path | Purpose |
-|---|---|---|
-| Authentication | `/api/auth` | Registration and login |
-| Products | `/api/products` | Product browsing, search, filtering, and sorting |
-| Categories | `/api/categories` | Public category queries |
-| Cart | `/api/cart` | Customer cart operations |
-| Wishlist | `/api/wishlist` | Customer wishlist operations |
-| Orders | `/api/orders` | Checkout, order history, cancellation, and seller status updates |
-| Reviews | `/api/reviews` | Product review retrieval and creation |
-| Customer | `/api/customer` | Customer dashboard |
-| Seller | `/api/seller` | Seller products, dashboard, and order operations |
-| Administrator | `/api/admin` | User, category, product, and order administration |
+- **No Committed Secrets**: No hardcoded JWT keys or credentials exist in Git-tracked files. All `application.yml` configs use `${JWT_SECRET:}`.
+- **Automated Local Key Resolution**: On local machines, microservices automatically resolve and share an uncommitted HMAC-256 key (`~/.shopease/.jwt_secret`), avoiding token signature mismatches without requiring manual environment setup.
+- **Production Overrides**: In staging or production, inject secrets via environment variables:
+  ```bash
+  export JWT_SECRET="your-256-bit-hex-or-base64-secret"
+  export MONGODB_URI="mongodb+srv://user:pass@cluster/db"
+  ```
+- **Security-Hardened `.gitignore`**: Excludes all `.env`, `.env.*`, `*.key`, `*.pem`, `*.jks`, `target/`, `node_modules/`, `dist/`, `.idea/`, and `.DS_Store` files.
+- **Stateless Tokens**: JJWT 0.12.5 signs tokens embedding user identity and role, allowing downstream microservices to validate authorization headers independently.
 
-## 12. Security and Configuration Practices
+---
 
-- JWT secrets are supplied through environment variables and are not committed.
-- `.env` files, local Spring profiles, private keys, certificates, credentials, logs,
-  IDE metadata, and generated build directories are ignored by Git.
-- Passwords are stored using BCrypt hashing rather than plaintext persistence.
-- Stateless JWT authentication is used instead of server-side sessions.
-- Endpoint permissions are restricted by role.
-- Input validation is applied to request DTOs.
-- CORS is restricted to local development origins by default.
-- Demo credentials must not be reused in production.
-- If a secret was previously committed, rotate it and remove it from repository history
-  using an appropriate repository-history tool before publishing the repository.
+## 12. Verification & Testing Workflow
 
-## 13. Verification Workflow
+After starting MongoDB, the backend services, and the frontend, verify the platform:
 
-After starting MongoDB, the backend, and the frontend, verify the following sequence:
+1. **Authentication**: Register a new user or log in with `customer@example.com` / `Customer@123`.
+2. **Product Catalog**: Filter by category, test price search, view product details.
+3. **Cart & Wishlist**: Add items to cart, modify quantities, add to wishlist, test "Move to Cart".
+4. **Checkout**: Select Mock Card Payment or Cash on Delivery, enter shipping information, and place order.
+5. **Inventory Sync**: Verify product stock decreases upon checkout and restores if the order is cancelled.
+6. **Seller Portal**: Log in as `seller@example.com` / `Seller@123`, add a new product, and update an order from `PENDING` to `SHIPPED`.
+7. **Admin Portal**: Log in as `admin@example.com` / `Admin@123`, inspect aggregated revenue and toggle a user's active status.
+8. **Swagger Testing**: Inspect microservice endpoints at `http://localhost:8081/swagger-ui.html`, `http://localhost:8082/swagger-ui.html`, `http://localhost:8083/swagger-ui.html`, and `http://localhost:8084/swagger-ui.html`.
 
-1. Open the frontend and register or log in as a customer.
-2. Browse products, search by keyword, and apply filters.
-3. Add a product to the cart and modify its quantity.
-4. Add a product to the wishlist and move it to the cart.
-5. Complete checkout and verify the order history.
-6. Log in as the seller and create or update a product.
-7. Update an order status from the seller dashboard.
-8. Log in as the administrator and verify user, category, product, and order controls.
-9. Open Swagger and verify that protected endpoints require authentication.
+---
 
-## 14. Suggested Feature Improvements
+## 13. Conclusion
 
-The following improvements are recommended for a production release:
-
-- Replace mock payments with a PCI-compliant payment provider.
-- Add refresh tokens, token revocation, and configurable token expiration.
-- Add email verification, password reset, and multi-factor authentication.
-- Move demo-account seeding behind an explicit development-only profile.
-- Add automated unit, integration, controller, and end-to-end tests.
-- Add pagination and indexed search for large product and order collections.
-- Add image upload storage using a secure object-storage provider.
-- Add inventory reservation and transactional checkout handling.
-- Add audit logs for administrative operations.
-- Add rate limiting, security headers, request tracing, and centralized monitoring.
-- Add CI checks for dependency vulnerabilities, secret scanning, formatting, and tests.
-- Add containerized deployment and separate development, staging, and production profiles.
-
-## 15. Conclusion
-
-ShopEase demonstrates a complete full-stack shopping workflow using a modern Vue.js
-client and a layered Spring Boot REST backend. Its modular organization, MongoDB
-persistence, JWT authentication, role-based access control, and separate customer,
-seller, and administrator workflows provide a strong foundation for continued
-development and production hardening.
+ShopEase illustrates a modern, enterprise-grade e-commerce application. By providing both a monolithic implementation and a cleanly decoupled **4-Microservices Architecture** with MongoDB persistence and an API Gateway, the project serves as an ideal reference implementation for full-stack software development, distributed systems architecture, and secure pair programming.

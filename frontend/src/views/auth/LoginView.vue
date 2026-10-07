@@ -65,19 +65,19 @@
                     <span v-else>Sign In</span>
                   </button>
 
-                  <div class="position-relative mb-4">
+                  <!-- <div class="position-relative mb-4">
                     <hr class="text-muted">
                     <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small">Or continue with</span>
-                  </div>
+                  </div> -->
 
-                  <div class="d-flex gap-3 justify-content-center mb-4">
+                  <!-- <div class="d-flex gap-3 justify-content-center mb-4">
                     <button type="button" class="btn btn-outline-secondary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;" @click="showToast('Social login coming soon')">
                       <i class="bi bi-google fs-5"></i>
                     </button>
                     <button type="button" class="btn btn-outline-secondary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;" @click="showToast('Social login coming soon')">
                       <i class="bi bi-github fs-5"></i>
                     </button>
-                  </div>
+                  </div> -->
                 </form>
                 
                 <div class="text-center mt-4 pt-3">

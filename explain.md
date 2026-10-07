@@ -128,3 +128,51 @@ MongoDB is a NoSQL database. Instead of tables and rows like traditional databas
 5. **Database:** `CartRepository` saves the updated cart back into MongoDB.
 6. **Response:** The backend returns a success message to the frontend.
 7. **Frontend Update:** The `cart.js` store updates the cart count, and the red badge on the Navbar instantly changes from `0` to `1`!
+
+---
+
+## 4. Microservices Architecture (Spring Boot 3 + MongoDB + IntelliJ IDEA)
+
+In the microservices design, the single monolith backend is split into **4 specialized microservices** coordinated through an **API Gateway**:
+
+```text
+                      Vue.js 3 Frontend (Port 5173)
+                                    |
+                                    v
+                     API Gateway (Spring Boot: Port 8080)
+                                    |
+     +---------------------+--------+--------+---------------------+
+     |                     |                 |                     |
+     v                     v                 v                     v
+User & Auth Service   Product Service   Cart Service          Order Service
+  (Port 8081)           (Port 8082)       (Port 8083)           (Port 8084)
+     |                     |                 |                     |
+     v                     v                 v                     v
+  MongoDB:              MongoDB:          MongoDB:              MongoDB:
+shopease_user_db    shopease_product_db  shopease_cart_db     shopease_order_db
+```
+
+### 1. Service Breakdown & MongoDB Collections
+1. **User Service (`port 8081`):**
+   - Collections: `users`
+   - Handles login, registration, JWT issuing/verification, user profiles, and admin user status.
+2. **Product Service (`port 8082`):**
+   - Collections: `categories`, `products`, `reviews`
+   - Handles catalog browsing, category management, seller product CRUD, reviews/ratings, and inventory stock control.
+3. **Cart Service (`port 8083`):**
+   - Collections: `carts`, `wishlists`
+   - Handles shopping cart items, wishlist items, quantity adjustment, and moves between wishlist and cart.
+4. **Order Service (`port 8084`):**
+   - Collections: `orders`
+   - Handles checkout, payments (Card & COD), stock deduction and cancellation restocking (via REST to Product Service), seller order tracking, and analytical dashboards.
+5. **API Gateway (`port 8080`):**
+   - Acts as the single frontend entry point on port 8080.
+   - Forwards `/api/*` requests to the proper microservice while preserving tokens, headers, and CORS compatibility.
+
+### 2. Opening & Running in IntelliJ IDEA
+1. Open IntelliJ IDEA -> **File -> Open...** -> select the `microservices` folder.
+2. IntelliJ detects the parent `pom.xml` and loads all 5 Spring Boot modules (`user-service`, `product-service`, `cart-service`, `order-service`, `api-gateway`).
+3. Shared run configurations are already pre-configured under `microservices/.run/`.
+4. Run each service (or use the **Services** tool window / Dashboard in IntelliJ to run all with one click).
+5. All services connect directly to MongoDB (`mongodb://localhost:27017`) and seed default admin/seller/customer accounts and product catalog automatically!
+

@@ -1,0 +1,28 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: order-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/shopease_order_db}
+      database: shopease_order_db
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:}
+    expiration: 86400000
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
+  services:
+    user: ${USER_SERVICE_URL:http://localhost:8081}
+    product: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+    cart: ${CART_SERVICE_URL:http://localhost:8083}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true

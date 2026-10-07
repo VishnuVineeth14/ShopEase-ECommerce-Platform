@@ -1,96 +1,151 @@
-# =========================
-# Java / Spring Boot
-# =========================
+# ==============================================================================
+# SHOP EASE - SECURITY-HARDENED .GITIGNORE
+# Prevents accidental leaks of credentials, secrets, build artifacts & IDE files
+# ==============================================================================
 
-backend/target/
-*.class
-*.jar
-*.war
-*.ear
-
-# Maven
-.mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
-
-# =========================
-# Node / Vue
-# =========================
-
-frontend/node_modules/
-frontend/dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# =========================
-# Environment / Secrets
-# =========================
-
+# ------------------------------------------------------------------------------
+# 1. Environment Files & Secrets (CRITICAL FOR GITHUB)
+# ------------------------------------------------------------------------------
 .env
 .env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 !.env.example
 
-# Local Spring configuration may contain database credentials and JWT secrets
+# Spring / Application Credentials & Secrets
+**/application-local.properties
+**/application-local.yml
+**/application-local.yaml
+**/application-secret.properties
+**/application-secret.yml
+**/application-secret.yaml
+**/application-prod.properties
+**/application-prod.yml
+**/application-prod.yaml
 application-*.properties
 application-*.yml
 application-*.yaml
 
-# Shared application.properties/application.yml files remain trackable.
-# Put machine-specific overrides in application-local.* or application-*.properties.
-
-# Credentials, tokens, and private keys
+# Secret & Credential Keys / Certificates
 *.secret
 *.secrets
-*.credentials
-*.pem
 *.key
+*.pem
 *.p12
+*.pfx
+*.pkcs12
 *.jks
+*.keystore
 credentials.json
 secrets.json
 service-account*.json
+token.json
+.jwt_secret
+**/.jwt_secret
+*.jwt_secret
 
-# =========================
-# IDE - IntelliJ IDEA
-# =========================
+# ------------------------------------------------------------------------------
+# 2. Java / Maven / Spring Boot Build Artifacts
+# ------------------------------------------------------------------------------
+target/
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
 
+# Maven Wrapper & Timing Caches
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ------------------------------------------------------------------------------
+# 3. Node.js / Vite / Frontend Artifacts
+# ------------------------------------------------------------------------------
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+.vite/
+**/.vite/
+
+# Node logs & package manager debugs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ------------------------------------------------------------------------------
+# 4. IDEs & Editors
+# ------------------------------------------------------------------------------
+# IntelliJ IDEA
 .idea/
+**/.idea/
 *.iml
+**/*.iml
 *.iws
 *.ipr
+out/
+**/out/
 
-# =========================
-# VS Code
-# =========================
+# Allow shared run configurations in microservices/.run
+!microservices/.run/
+!**/.run/
 
+# Visual Studio Code
 .vscode/
+**/.vscode/
+*.code-workspace
+settings.json
 
-# =========================
-# macOS
-# =========================
+# Eclipse / STS
+.project
+.classpath
+.settings/
+**/.settings/
 
+# ------------------------------------------------------------------------------
+# 5. Operating System Files
+# ------------------------------------------------------------------------------
 .DS_Store
+**/.DS_Store
+.DS_Store?
+._*
+**/*._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
 
-# =========================
-# Logs
-# =========================
-
+# ------------------------------------------------------------------------------
+# 6. Logs & Database / Runtime Dumps
+# ------------------------------------------------------------------------------
 *.log
+logs/
+**/logs/
+*.sqlite
+*.db
+mongod.log
+dump/
+**/dump/
 
-# =========================
-# Temporary files
-# =========================
-
+# ------------------------------------------------------------------------------
+# 7. Temporary, Swap & Backup Files
+# ------------------------------------------------------------------------------
 *.tmp
 *.temp
 *.swp
 *.swo
+*~
 *.bak
 *.orig
-
-# =========================
-# OS / IDE metadata
-# =========================
-
-Thumbs.db
+*.patch
